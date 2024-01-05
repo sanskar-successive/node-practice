@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Management Interface</title>
+</head>
+<body>
+  <h1>File Management Interface</h1>
+  
+  <h2>Upload File</h2>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <h2>Uploaded Files</h2>
+  <ul id="fileList">
+    <% files.forEach(file => { %>
+      <li>
+        <%= file %>
+        <button onclick="downloadFile('<%= file %>')">Download</button>
+        <button onclick="deleteFile('<%= file %>')">Delete</button>
+      </li>
+    <% }); %>
+  </ul>
+
+  <script>
+    async function fetchFiles() {
+      const response = await fetch('/files');
+      const files = await response.json();
+
+      const fileList = document.getElementById('fileList');
+      fileList.innerHTML = '';
+
+      files.forEach(file => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+          ${file}
+          <button onclick="downloadFile('${file}')">Download</button>
+          <button onclick="deleteFile('${file}')">Delete</button>
+        `;
+        fileList.appendChild(listItem);
+      });
+    }
+
+    async function downloadFile(filename) {
+      window.location.href = `/download/${filename}`;
+    }
+
+    async function deleteFile(filename) {
+      const response = await fetch(`/files/${filename}`, { method: 'DELETE' });
+      if (response.ok) {
+        fetchFiles();
+      } else {
+        alert('Error deleting file!');
+      }
+    }
+
+    const uploadForm = document.getElementById('uploadForm');
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(uploadForm);
+      const response = await fetch('/upload', { method: 'POST', body: formData });
+      if (response.ok) {
+        uploadForm.reset();
+        fetchFiles();
+      } else {
+        alert('Error uploading file!');
+      }
+    });
+
+    fetchFiles();
+  </script>
+</body>
+</html>
